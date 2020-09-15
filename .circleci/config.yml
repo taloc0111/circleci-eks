@@ -1,10 +1,9 @@
-version: 2.1
+version: 2
 
 workflows:
   primary:
     jobs:
-      - build&pushImage:
-          context: "Ta Duc Loc" # has an env var called MY_ENV_VAR
+      - build&pushImage
       - deploy:
           requires:
             - build&pushImage
@@ -32,16 +31,16 @@ jobs:
       - run:
           name: Login to ECR
           command: |
-            echo "aws configure set default.region $AWS_REGION"
-            echo "aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID"
-            echo "aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY"
-            $(aws ecr get-login --region $AWS_REGION)
+            aws configure set default.region us-west-2
+            aws configure set aws_access_key_id AKIAVB4JN6RKGJI2E4P5
+            aws configure set aws_secret_access_key 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
+            $(aws ecr get-login --region us-west-2)
       - run: 
           name: Tag the image with ECR repo name 
-          command: docker tag ${CIRCLE_PROJECT_REPONAME}:$TAG ${HELLOAPP_ECR_REPO}:$TAG    
+          command: docker tag ${CIRCLE_PROJECT_REPONAME}:$TAG 347643704404.dkr.ecr.us-west-2.amazonaws.com/helloapp:$TAG    
       - run: 
           name: Push the image the ECR repo
-          command: docker push ${HELLOAPP_ECR_REPO}:$TAG
+          command: docker push 347643704404.dkr.ecr.us-west-2.amazonaws.com/helloapp:$TAG
   deploy:
     docker:
         - image: circleci/golang:1.10
@@ -65,10 +64,7 @@ jobs:
       - run:
           name: Pull the kubeconfig file from s3
           command: |
-            aws configure set default.region $AWS_REGION
-            aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
-            aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
-            aws eks --region $$AWS_REGION update-kubeconfig --name $CLUSTER_NAME 
+            aws eks --region us-west-2 update-kubeconfig --name terraform-eks-demo
       - run:
           name: Install and confgure kubectl aws-iam-authenticator
           command: |
