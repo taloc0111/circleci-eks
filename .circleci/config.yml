@@ -27,7 +27,7 @@ jobs:
             aws configure set region $AWS_REGION
             aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
             aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY  
-            $(aws ecr get-login --region $AWS_REGION | sed -e 's/-e none//g')
+            $(aws ecr get-login)
       - run: 
           name: Tag the image with ECR repo name 
           command: docker tag ${CIRCLE_PROJECT_REPONAME}:$TAG ${HELLOAPP_ECR_REPO}:$TAG    
