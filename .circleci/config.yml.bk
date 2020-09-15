@@ -1,0 +1,93 @@
+version: 2
+
+jobs:
+  build&pushImage:
+    working_directory: /go/src/hello-app
+    docker:
+      - image: circleci/golang:1.10
+    steps:
+      - checkout
+      - run:
+          name: build the binary
+          command: go build -o hello-app
+      - setup_remote_docker:
+          docker_layer_caching: false
+      - run:
+          name: Set the tag for the image, we will concatenate the app verson and circle build number with a `-` char in between
+          command:  echo 'export TAG=$(cat VERSION)-$CIRCLE_BUILD_NUM' >> $BASH_ENV
+      - run:
+          name: Build the docker image
+          command: docker build . -t ${CIRCLE_PROJECT_REPONAME}:$TAG
+      - run:
+          name: Install AWS cli
+          command: sudo apt-get update && sudo apt-get install -y awscli
+      - run:
+          name: Login to ECR
+          command: |
+            aws configure set region $AWS_REGION
+            aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+            aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+            $(aws ecr get-login --region $AWS_REGION)
+      - run: 
+          name: Tag the image with ECR repo name 
+          command: docker tag ${CIRCLE_PROJECT_REPONAME}:$TAG ${HELLOAPP_ECR_REPO}:$TAG    
+      - run: 
+          name: Push the image the ECR repo
+          command: docker push ${HELLOAPP_ECR_REPO}:$TAG
+  deploy:
+    docker:
+        - image: circleci/golang:1.10
+    steps:
+      - attach_workspace:
+          at: /tmp/workspace
+      - checkout
+      - run:
+          name: Install AWS cli
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y awscli
+      - run:
+          name: Set the tag for the image, we will concatenate the app verson and circle build number with a `-` char in between
+          command:  echo 'export TAG=$(cat VERSION)-$CIRCLE_PREVIOUS_BUILD_NUM' >> $BASH_ENV
+      - run:
+          name: Install and confgure kubectl
+          command: |
+            sudo curl -L https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl
+            sudo chmod +x /usr/local/bin/kubectl
+      - run:
+          name: Pull the kubeconfig file from s3
+          command: |
+            aws configure set region $AWS_REGION
+            aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+            aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+            aws eks --region $AWS_REGION update-kubeconfig --name $CLUSTER_NAME 
+      - run:
+          name: Install and confgure kubectl aws-iam-authenticator
+          command: |
+            curl -o aws-iam-authenticator https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/aws-iam-authenticator
+            sudo chmod +x ./aws-iam-authenticator
+            sudo cp ./aws-iam-authenticator /bin/aws-iam-authenticator
+      - run:
+          name: Install and configuire helm
+          command: | 
+            sudo curl https://baltocdn.com/helm/signing.asc | sudo apt-key add -
+            sudo apt-get install apt-transport-https --yes
+            echo "deb https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+            sudo apt-get update --yes
+            sudo apt-get install helm --yes
+      - run: 
+          name: Initialize helm
+          command: |
+            helm repo add stable https://kubernetes-charts.storage.googleapis.com/
+            helm repo update      
+      - run:
+          name: Release helloapp using helm chart 
+          command: bash scripts/release-helloapp.sh $TAG
+workflows:
+  version: 2
+  primary:
+    jobs:
+      - build&pushImage
+      - deploy:
+          requires:
+            - build&pushImage
