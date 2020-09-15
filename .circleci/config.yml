@@ -1,5 +1,17 @@
-version: 2
+version: 2.1
 
+workflows:
+  test-env-vars:
+    jobs:
+      - build:
+          context: "Ta Duc Loc" # has an env var called MY_ENV_VAR
+  primary:
+    jobs:
+      - build&pushImage
+      - deploy:
+          requires:
+            - build&pushImage
+            
 jobs:
   build&pushImage:
     working_directory: /go/src/hello-app
@@ -83,11 +95,3 @@ jobs:
       - run:
           name: Release helloapp using helm chart 
           command: bash scripts/release-helloapp.sh $TAG
-workflows:
-  version: 2
-  primary:
-    jobs:
-      - build&pushImage
-      - deploy:
-          requires:
-            - build&pushImage
