@@ -24,7 +24,7 @@ jobs:
       - run:
           name: Login to ECR
           command: |  
-            $(aws ecr get-login --no-include-email)
+            $(aws ecr get-login)
       - run: 
           name: Tag the image with ECR repo name 
           command: docker tag ${CIRCLE_PROJECT_REPONAME}:$TAG ${HELLOAPP_ECR_REPO}:$TAG    
