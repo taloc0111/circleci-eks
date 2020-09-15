@@ -1,14 +1,10 @@
 version: 2
 
 workflows:
-  version: 2
-  test-env-vars:
-    jobs:
-      - build:
-          context: "Ta Duc Loc" # has an env var called MY_ENV_VAR
   primary:
     jobs:
-      - build&pushImage
+      - build&pushImage:
+          context: "Ta Duc Loc" # has an env var called MY_ENV_VAR
       - deploy:
           requires:
             - build&pushImage
