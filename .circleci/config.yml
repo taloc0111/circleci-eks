@@ -2,6 +2,23 @@ version: 2.1
 
 orbs:
   aws-ecr: circleci/aws-ecr@6.7.0
+  aws-eks: circleci/aws-eks@0.2
+  helm: circleci/helm@1.0
+
+jobs:
+  install-helm-chart:
+    executor: aws-eks/python
+    parameters:
+      cluster-name:
+        description: Cluster name
+        type: string
+    steps:
+      - aws-eks/update-kubeconfig-with-authenticator:
+          cluster-name: << parameters.cluster-name >>
+      - helm/install-helm-chart:
+          chart: charts/helloapp
+          helm-version: v3.2.4
+          release-name: helloapp
 
 workflows:
   build_and_push_image:
@@ -16,3 +33,7 @@ workflows:
           region: AWS_REGION
           repo: helloapp
           tag: "$CIRCLE_SHA1"
+  deployment:
+    jobs:
+      - install-helm-chart:
+          cluster-name: terraform-eks-demo
