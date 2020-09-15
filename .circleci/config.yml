@@ -23,8 +23,11 @@ jobs:
           command: sudo apt-get update && sudo apt-get install -y awscli
       - run:
           name: Login to ECR
-          command: |  
-            $(aws ecr get-login)
+          command: |
+            aws configure set default.region $AWS_REGION
+            aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+            aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY  
+            $(aws ecr get-login --region $AWS_REGION)
       - run: 
           name: Tag the image with ECR repo name 
           command: docker tag ${CIRCLE_PROJECT_REPONAME}:$TAG ${HELLOAPP_ECR_REPO}:$TAG    
@@ -54,7 +57,10 @@ jobs:
       - run:
           name: Pull the kubeconfig file from s3
           command: |
-            aws eks --region $AWS_REGION update-kubeconfig --name $CLUSTER_NAME 
+            aws configure set default.region $AWS_REGION
+            aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+            aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+            aws eks --region $$AWS_REGION update-kubeconfig --name $CLUSTER_NAME 
       - run:
           name: Install and confgure kubectl aws-iam-authenticator
           command: |
