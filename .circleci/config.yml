@@ -42,4 +42,4 @@ workflows:
       - install-helm-chart:
           cluster-name: terraform-eks-demo
           requires:
-            - build-and-push-image
+            - aws-ecr/build-and-push-image
