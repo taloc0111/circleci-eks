@@ -1,0 +1,13 @@
+image:
+  tag: dev
+  repository: 347643704404.dkr.ecr.us-west-2.amazonaws.com/helloapp
+  imagePullPolicy: Always
+
+labels:
+  env: "staging"
+  cluster: "terraform-eks-demo"
+
+service:
+  port: 80
+  targetPort: 8080
+  type: LoadBalancer
