@@ -24,7 +24,6 @@ jobs:
       - run:
           name: Login to ECR
           command: |
-            aws configure set default.region us-west-2
             aws configure set aws_access_key_id AKIAVB4JN6RKGJI2E4P5
             aws configure set aws_secret_access_key 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
             $(aws ecr get-login --region us-west-2)
