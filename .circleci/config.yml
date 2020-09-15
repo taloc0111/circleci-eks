@@ -13,6 +13,11 @@ jobs:
         description: Cluster name
         type: string
     steps:
+      - checkout
+      - run:
+          name: check source
+          command: |
+            ls -la
       - aws-eks/update-kubeconfig-with-authenticator:
           cluster-name: << parameters.cluster-name >>
       - helm/install-helm-chart:
