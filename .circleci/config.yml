@@ -1,6 +1,7 @@
-version: 2.1
+version: 2
 
 workflows:
+  version: 2
   test-env-vars:
     jobs:
       - build:
@@ -11,7 +12,6 @@ workflows:
       - deploy:
           requires:
             - build&pushImage
-            
 jobs:
   build&pushImage:
     working_directory: /go/src/hello-app
